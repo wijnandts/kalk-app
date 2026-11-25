@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="de" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0f172a">
+  <title>Kalkulations-Meister – AVB Einzelhandel</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%92%B0%3C/text%3E%3C/svg%3E">
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: { brand: { 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca' } }
+        }
+      }
+    }
+  </script>
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen transition-colors">
+
+  <!-- Kopfzeile -->
+  <header class="sticky top-0 z-40 bg-white/90 dark:bg-slate-800/90 backdrop-blur border-b border-slate-200 dark:border-slate-700">
+    <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+      <h1 class="text-lg font-bold flex items-center gap-2">
+        <span aria-hidden="true"> calc</span> Kalkulations-Meister
+      </h1>
+      <div class="flex items-center gap-3">
+        <div id="level-pill" class="text-sm font-semibold bg-brand-600 text-white px-3 py-1 rounded-full" role="status" aria-live="polite">Level 1</div>
+        <button id="theme-toggle" class="p-2 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700" aria-label="Hell- und Dunkelmodus umschalten">
+          <span id="theme-icon" aria-hidden="true">🌙</span>
+        </button>
+      </div>
+    </div>
+    <!-- Level-Fortschrittsbalken -->
+    <div class="h-2 bg-slate-200 dark:bg-slate-700">
+      <div id="level-bar" class="h-2 bg-gradient-to-r from-emerald-400 to-brand-600 transition-all duration-700" style="width:0%"></div>
+    </div>
+  </header>
+
+  <main class="max-w-3xl mx-auto px-4 py-6 space-y-6">
+
+    <!-- Start / Übersicht -->
+    <section id="view-start" aria-labelledby="start-heading">
+      <h2 id="start-heading" class="text-2xl font-bold mb-2">Willkommen! 👋</h2>
+      <p class="mb-4 text-slate-600 dark:text-slate-300">
+        Diese App hilft dir, die <strong>Verkaufskalkulation</strong> zu lernen.
+        Du sammelst Punkte, Level und Badges. Dein Fortschritt bleibt auf diesem Gerät gespeichert.
+      </p>
+      <div id="badge-wall" class="grid grid-cols-4 gap-3 mb-6"></div>
+      <div class="grid gap-3">
+        <button data-go="quiz" class="mode-btn">
+          <span class="text-2xl" aria-hidden="true">🧠</span>
+          <span><strong>Wissen testen</strong><br>Multiple Choice mit Erklärungen</span>
+        </button>
+        <button data-go="drag" class="mode-btn">
+          <span class="text-2xl" aria-hidden="true"> 🧩</span>
+          <span><strong>Begriffe zuordnen</strong><br>Drag &amp; Drop: Kalkulationsbegriffe</span>
+        </button>
+        <button data-go="calc" class="mode-btn">
+          <span class="text-2xl" aria-hidden="true">🧮</span>
+          <span><strong>Kalkulation üben</strong><br>Rechne selbst den Verkaufspreis aus</span>
+        </button>
+        <button id="btn-export" class="mode-btn">
+          <span class="text-2xl" aria-hidden="true">🖨️</span>
+          <span><strong>Ergebnis exportieren</strong><br>Zeugnis-Ansicht zum Drucken (PDF)</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Quiz-Ansicht -->
+    <section id="view-quiz" class="hidden" aria-labelledby="quiz-heading">
+      <h2 id="quiz-heading" class="text-xl font-bold mb-4">Wissenstest</h2>
+      <div id="quiz-progress" class="text-sm text-slate-500 dark:text-slate-400 mb-3"></div>
+      <div id="quiz-card" class="bg-white dark:bg-slate-800 rounded-2xl shadow p-5"></div>
+      <div id="quiz-feedback" class="mt-4 hidden" role="alert"></div>
+    </section>
+
+    <!-- Drag & Drop Ansicht -->
+    <section id="view-drag" class="hidden" aria-labelledby="drag-heading">
+      <h2 id="drag-heading" class="text-xl font-bold mb-4">Begriffe zuordnen</h2>
+      <p class="text-sm text-slate-600 dark:text-slate-300 mb-4">
+        Ziehe jeden Chip in die richtige Zeile der Kalkulationstabelle.
+        Du kannst auch tippen: Chip antippen, dann Zeile antippen.
+      </p>
+      <div id="chips" class="flex flex-wrap gap-2 mb-6"></div>
+      <div id="dropzones" class="space-y-2"></div>
+      <button id="drag-check" class="btn-primary mt-6">Prüfen</button>
+    </section>
+
+    <!-- Kalkulations-Rechner -->
+    <section id="view-calc" class="hidden" aria-labelledby="calc-heading">
+      <h2 id="calc-heading" class="text-xl font-bold mb-4">Kalkulation üben</h2>
+      <div id="calc-task" class="bg-white dark:bg-slate-800 rounded-2xl shadow p-5 mb-4"></div>
+      <button id="calc-check" class="btn-primary">Antwort prüfen</button>
+      <div id="calc-feedback" class="mt-4 hidden" role="alert"></div>
+    </section>
+
+    <!-- Export-Ansicht (druckoptimiert) -->
+    <section id="view-export" class="hidden" aria-labelledby="export-heading">
+      <div class="no-print flex gap-3 mb-4">
+        <button id="btn-print" class="btn-primary"> 🖨️ Drucken / als PDF speichern</button>
+        <button data-go="start" class="btn-secondary">Zurück</button>
+      </div>
+      <div id="export-sheet" class="print-sheet bg-white dark:bg-slate-800 rounded-2xl shadow p-6"></div>
+    </section>
+
+  </main>
+
+  <!-- Navigation unten (App-ähnlich) -->
+  <nav id="bottom-nav" class="no-print md:hidden sticky bottom-0 bg-white/95 dark:bg-slate-800/95 backdrop-blur border-t border-slate-200 dark:border-slate-700 grid grid-cols-4">
+    <button data-go="start" class="nav-item">🏠<span>Start</span></button>
+    <button data-go="quiz" class="nav-item">🧠<span>Quiz</span></button>
+    <button data-go="drag" class="nav-item"> 🧩<span>Ordnen</span></button>
+    <button data-go="calc" class="nav-item">🧮<span>Rechnen</span></button>
+  </nav>
+
+  <!-- Toast für Badges -->
+  <div id="toast" class="fixed bottom-20 left-1/2 -translate-x-1/2 hidden bg-slate-900 text-white dark:bg-white dark:text-slate-900 px-5 py-3 rounded-xl shadow-lg font-semibold z-50" role="status" aria-live="polite"></div>
+
+  <script src="script.js"></script>
+  <script>
+    // Service-Worker registrieren (Offline-Fähigkeit)
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(console.warn);
+    }
+  </script>
+</body>
+</html>
